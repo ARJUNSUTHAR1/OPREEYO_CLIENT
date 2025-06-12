@@ -1,0 +1,30 @@
+@import '@fortawesome/fontawesome-free/css/all.min.css';
+/* @import url('https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,300..900;1,300..900&family=Urbanist:ital,wght@0,100..900;1,100..900&display=swap'); */
+@tailwind utilities;
+@import "tailwindcss";
+
+@font-face {
+  font-family: 'icomoon';
+  src:  url('/public/assets/fonts/fon.woff2');
+}
+
+
+
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+
+.fig {
+  font-family: "Figtree", sans-serif;
+  font-optical-sizing: auto;
+  font-style: normal;
+}
+.icon {
+  font-family: "icomoon", sans-serif;
+  font-optical-sizing: auto;
+  font-style: normal;
+}
