@@ -1,12 +1,15 @@
-import React, { useState } from 'react'
+import React from 'react'
 import * as Icon from "@phosphor-icons/react/dist/ssr";
 import { useModalWishlistContext } from '../../context/ModalWishlistContext'
 import { useWishlist } from '../../context/WishlistContext'
 import { Link } from 'react-router-dom';
+import useCurrencyStore from '../../store/currencyStore';
 
 const ModalWishlist = () => {
     const { isModalOpen, closeModalWishlist } = useModalWishlistContext();
     const { wishlistState, removeFromWishlist } = useWishlist()
+    const { formatPrice } = useCurrencyStore();
+    const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
     return (
         <>
@@ -30,18 +33,20 @@ const ModalWishlist = () => {
                                 <div className="infor flex items-center gap-5">
                                     <div className="bg-img">
                                         <img
-                                            src={product.images[0]}
+                                            src={product.thumbImage ? (typeof product.thumbImage === 'string' ? `${BASE_URL}${product.thumbImage}` : `${BASE_URL}${product.thumbImage[0]}`) : (product.images?.[0] || '/images/product/1000x1000.png')}
                                             width={300}
                                             height={300}
                                             alt={product.name}
-                                            className='w-[100px] aspect-square flex-shrink-0 rounded-lg'
+                                            className='w-[100px] aspect-square flex-shrink-0 rounded-lg object-cover'
                                         />
                                     </div>
                                     <div className=''>
                                         <div className="name text-button">{product.name}</div>
                                         <div className="flex items-center gap-2 mt-2">
-                                            <div className="product-price text-title">${product.price}.00</div>
-                                            <div className="product-origin-price text-title text-secondary2"><del>${product.originPrice}.00</del></div>
+                                            <div className="product-price text-title">{formatPrice(product.price, product.currency || 'INR')}</div>
+                                            {product.originPrice && (
+                                                <div className="product-origin-price text-title text-secondary2"><del>{formatPrice(product.originPrice, product.currency || 'INR')}</del></div>
+                                            )}
                                         </div>
                                     </div>
                                 </div>

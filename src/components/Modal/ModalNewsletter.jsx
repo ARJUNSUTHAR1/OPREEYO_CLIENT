@@ -1,24 +1,35 @@
 import { useNavigate } from 'react-router-dom'
 import React, { useState, useEffect } from 'react'
 import * as Icon from "@phosphor-icons/react/dist/ssr";
-import productData from '../../data/Product.json'
-// import { useModalQuickviewContext } from '@/context/ModalQuickviewContext';
+import useProductStore from '../../store/productStore';
+import useCurrencyStore from '../../store/currencyStore';
 
 const ModalNewsletter = () => {
     const [open, setOpen] = useState(false)
     const navigate = useNavigate()
-    // const { openQuickview } = useModalQuickviewContext()
+    const { products } = useProductStore()
+    const { formatPrice } = useCurrencyStore()
+    const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
     const handleDetailProduct = (productId) => {
-        // redirect to shop with category selected
         navigate(`/product/default?id=${productId}`);
     };
+
+    const getImageUrl = (product) => {
+        if (product.thumbImage) {
+            if (product.thumbImage.startsWith('http')) return product.thumbImage;
+            return `${BASE_URL}${product.thumbImage}`;
+        }
+        return '/images/product/1000x1000.png';
+    }
 
     useEffect(() => {
         setTimeout(() => {
             setOpen(true)
         }, 3000)
     }, [])
+
+    const displayProducts = products.slice(0, 3)
 
     return (
         <div className="modal-newsletter" onClick={() => setOpen(false)}>
@@ -48,38 +59,43 @@ const ModalNewsletter = () => {
                             </div>
                             <div className="heading5 md:pb-5 icon">You May Also Like</div>
                             <div className="list w-full flex flex-col md:gap-5 overflow-x-auto sm:pr-6">
-                                {productData.slice(0,3).map((item, index) => (
-                                    <>
+                                {displayProducts.map((item) => (
+                                    <div
+                                        className='md:product-item mt-5 md:mt-0 item pb-5 flex w-full items-center justify-between gap-3 border-b border-[#e7e3e3]'
+                                        key={item._id || item.id}
+                                    >
                                         <div
-                                            className='md:product-item mt-5 md:mt-0 item pb-5 flex w-full items-center justify-between gap-3 border-b border-[#e7e3e3]'
-                                            key={index}
+                                            className="infor flex items-center gap-5 cursor-pointer"
+                                            onClick={() => handleDetailProduct(item._id || item.id)}
                                         >
-                                            <div
-                                                className="infor flex items-center gap-5 cursor-pointer"
-                                                onClick={() => handleDetailProduct(item.id)}
-                                            >
-                                                <div className="bg-img flex-shrink-0">
-                                                    <img width={5000} height={5000} src={item.thumbImage[0]} alt={item.name}
-                                                        className='w-[100px] aspect-square flex-shrink-0 rounded-lg object-cover' />
-                                                </div>
-                                                <div className='icon'>
-                                                    <div className="name text-button">{item.name}</div>
-                                                    <div className="flex items-center gap-2 mt-2">
-                                                        <div className="product-price text-title">${item.price}.00</div>
+                                            <div className="bg-img flex-shrink-0">
+                                                <img
+                                                    width={100}
+                                                    height={100}
+                                                    src={getImageUrl(item)}
+                                                    alt={item.name}
+                                                    className='w-[100px] aspect-square flex-shrink-0 rounded-lg object-cover'
+                                                />
+                                            </div>
+                                            <div className='icon'>
+                                                <div className="name text-button">{item.name}</div>
+                                                <div className="flex items-center gap-2 mt-2">
+                                                    <div className="product-price text-title">{formatPrice(item.price, item.currency || 'INR')}</div>
+                                                    {item.originPrice && (
                                                         <div className="product-origin-price text-title text-secondary2">
-                                                            <del>${item.originPrice}.00</del>
+                                                            <del>{formatPrice(item.originPrice, item.currency || 'INR')}</del>
                                                         </div>
-                                                    </div>
+                                                    )}
                                                 </div>
                                             </div>
-                                            <button
-                                                className="quick-view-btn button-main sm:py-3 py-2 sm:px-5 px-4 bg-black hover:bg-green text-white icon !rounded-full whitespace-nowrap"
-                                                // onClick={() => openQuickview(item)}
-                                            >
-                                                QUICK VIEW
-                                            </button>
                                         </div>
-                                    </>
+                                        <button
+                                            className="quick-view-btn button-main sm:py-3 py-2 sm:px-5 px-4 bg-black hover:bg-green text-white icon !rounded-full whitespace-nowrap"
+                                            onClick={() => handleDetailProduct(item._id || item.id)}
+                                        >
+                                            VIEW
+                                        </button>
+                                    </div>
                                 ))}
                             </div>
                         </div>

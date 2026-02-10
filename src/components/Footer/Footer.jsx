@@ -20,9 +20,9 @@ const Footer = () => {
                                         <span className="text-button mt-3">Address:</span>
                                     </div>
                                     <div className="flex flex-col  icon">
-                                        <span className=''>hi.avitex@gmail.com</span>
-                                        <span className='mt-3'>1-333-345-6868</span>
-                                        <span className='mt-3 pt-px'>549 Oak St.Crystal Lake, IL 60014</span>
+                                        <span className=''>arjunsuthar2112@gmail.com</span>
+                                        <span className='mt-3'>+91-XXXXX-XXXXX</span>
+                                        <span className='mt-3 pt-px'>Bhilwara, Rajasthan, India</span>
                                     </div>
                                 </div>
                             </div>
@@ -85,25 +85,8 @@ const Footer = () => {
                         </div>
                         <div className="footer-bottom py-3 flex items-center justify-between gap-5 max-lg:justify-center max-lg:flex-col border-t border-line">
                             <div className="left flex items-center gap-8">
-                                <div className="copyright caption1 text-secondary icon font-[900]">©2025 OPREEYO. All Rights Reserved.</div>
-                                <div className="select-block flex items-center gap-5 max-md:hidden icon">
-                                    <div className="choose-language flex items-center gap-1.5">
-                                        <select name="language" id="chooseLanguageFooter" className='caption2 bg-transparent'>
-                                            <option value="English">English</option>
-                                            <option value="Espana">Espana</option>
-                                            <option value="France">France</option>
-                                        </select>
-                                        <Icon.CaretDown size={12} color='#1F1F1F' />
-                                    </div>
-                                    <div className="choose-currency flex items-center gap-1.5">
-                                        <select name="currency" id="chooseCurrencyFooter" className='caption2 bg-transparent'>
-                                            <option value="USD">USD</option>
-                                            <option value="EUR">EUR</option>
-                                            <option value="GBP">GBP</option>
-                                        </select>
-                                        <Icon.CaretDown size={12} color='#1F1F1F' />
-                                    </div>
-                                </div>
+                                <div className="copyright caption1 text-secondary icon font-[900]">©2025 OPREEYO. All Rights Reserved. Designed & Developed by <a href="mailto:arjunsuthar2112@gmail.com" className="text-black hover:underline">Arjun Suthar</a></div>
+                                
                             </div>
                             <div className="right flex items-center gap-2">
                                 <div className="caption1 text-secondary">Payment:</div>

@@ -1,18 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import * as Icon from "@phosphor-icons/react"; // Adjust as needed
+import * as Icon from "@phosphor-icons/react";
 import { Link, useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
+import axios from 'axios';
 
-// import Product from '../components/Product/Product'; // Adjust path
-import productData from '../../../data/Product.json'; // Adjust path
-
-import useLoginPopup from '../../../store/useLoginPopup'; // Adjust path
-import useMenuMobile from '../../../store/useMenuMobile'; // Adjust path
-import { useModalCartContext } from '../../../context/ModalCartContext'; // Adjust path
-import { useModalWishlistContext } from '../../../context/ModalWishlistContext'; // Adjust path
-import { useModalSearchContext } from '../../../context/ModalSearchContext'; // Adjust path
-import { useCart } from '../../../context/CartContext'; // Adjust path
+import useLoginPopup from '../../../store/useLoginPopup';
+import useMenuMobile from '../../../store/useMenuMobile';
+import { useModalCartContext } from '../../../context/ModalCartContext';
+import { useModalWishlistContext } from '../../../context/ModalWishlistContext';
+import { useModalSearchContext } from '../../../context/ModalSearchContext';
+import { useCart } from '../../../context/CartContext';
 import { useLocation } from 'react-router-dom';
-import useAuthStore from '../../../store/authStore'; // adjust path as needed
+import useAuthStore from '../../../store/authStore';
+import CurrencyLanguageSwitcher from '../CurrencyLanguageSwitcher';
 
 
 const MenuOne = (props) => {
@@ -37,6 +37,8 @@ const MenuOne = (props) => {
     const [openSubNavMobile, setOpenSubNavMobile] = useState(null);
     const [fixedHeader, setFixedHeader] = useState(false);
     const [lastScrollPosition, setLastScrollPosition] = useState(0);
+    const [navbarBanners, setNavbarBanners] = useState([]);
+    const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
     const { openLoginPopup, handleLoginPopup } = useLoginPopup();
     const { openMenuMobile, handleMenuMobile } = useMenuMobile();
@@ -58,6 +60,18 @@ const MenuOne = (props) => {
         };
     }, [lastScrollPosition]);
 
+    useEffect(() => {
+        const fetchNavbarBanners = async () => {
+            try {
+                const response = await axios.get(`${BASE_URL}/api/banners/active?type=navbar`);
+                setNavbarBanners(response.data);
+            } catch (error) {
+                console.error('Error fetching navbar banners:', error);
+            }
+        };
+        fetchNavbarBanners();
+    }, []);
+
     const handleOpenSubNavMobile = (index) => {
         setOpenSubNavMobile(openSubNavMobile === index ? null : index);
     };
@@ -75,8 +89,6 @@ const MenuOne = (props) => {
         navigate(`/shop/breadcrumb1?type=${type}`);
     };
 
-
-    console.log(user);
 
     return (
         <>
@@ -102,38 +114,38 @@ const MenuOne = (props) => {
                                                 <div className="flex justify-between py-8">
                                                     <div className="nav-link basis-2/3 grid grid-cols-4 gap-y-8">
                                                         <div className="nav-item">
-                                                            <div className="text-button-uppercase pb-2">Formal Pants</div>
+                                                            <div className="text-button-uppercase pb-2">Formal Wear</div>
                                                             <ul>
                                                                 <li>
                                                                     <div
-                                                                        onClick={() => handleGenderClick('men')}
+                                                                        onClick={() => handleCategoryClick('formal-shirts')}
                                                                         className={`link text-secondary duration-300 cursor-pointer`}
                                                                     >
-                                                                        FALANA 1
+                                                                        Formal Shirts
                                                                     </div>
                                                                 </li>
                                                                 <li>
                                                                     <div
-                                                                        onClick={() => handleTypeClick('outerwear')}
+                                                                        onClick={() => handleCategoryClick('formal-pants')}
                                                                         className={`link text-secondary duration-300 cursor-pointer`}
                                                                     >
-                                                                        FALANA 2
+                                                                        Formal Pants
                                                                     </div>
                                                                 </li>
                                                                 <li>
                                                                     <div
-                                                                        onClick={() => handleTypeClick('sweater')}
+                                                                        onClick={() => handleCategoryClick('blazers')}
                                                                         className={`link text-secondary duration-300 cursor-pointer`}
                                                                     >
-                                                                        FALANA 3
+                                                                        Blazers
                                                                     </div>
                                                                 </li>
                                                                 <li>
                                                                     <div
-                                                                        onClick={() => handleTypeClick('shirt')}
+                                                                        onClick={() => handleCategoryClick('suits')}
                                                                         className={`link text-secondary duration-300 cursor-pointer`}
                                                                     >
-                                                                        FALANA 4
+                                                                        Suits
                                                                     </div>
                                                                 </li>
                                                                 <li>
@@ -147,43 +159,43 @@ const MenuOne = (props) => {
                                                             </ul>
                                                         </div>
                                                         <div className="nav-item">
-                                                            <div className="text-button-uppercase pb-2">Accessories</div>
+                                                            <div className="text-button-uppercase pb-2">Casual Wear</div>
                                                             <ul>
                                                                 <li>
                                                                     <div
-                                                                        onClick={() => handleTypeClick('shirt')}
+                                                                        onClick={() => handleCategoryClick('t-shirts')}
                                                                         className={`link text-secondary duration-300 cursor-pointer`}
                                                                     >
-                                                                        FALANA 1
+                                                                        T-Shirts
                                                                     </div>
                                                                 </li>
                                                                 <li>
                                                                     <div
-                                                                        onClick={() => handleTypeClick('top')}
+                                                                        onClick={() => handleCategoryClick('jeans')}
                                                                         className={`link text-secondary duration-300 cursor-pointer`}
                                                                     >
-                                                                        FALANA 2
+                                                                        Jeans
                                                                     </div>
                                                                 </li>
                                                                 <li>
                                                                     <div
-                                                                        onClick={() => handleTypeClick('t-shirt')}
+                                                                        onClick={() => handleCategoryClick('casual-shirts')}
                                                                         className={`link text-secondary duration-300 cursor-pointer`}
                                                                     >
-                                                                        FALANA 3
+                                                                        Casual Shirts
                                                                     </div>
                                                                 </li>
                                                                 <li>
                                                                     <div
-                                                                        onClick={() => handleTypeClick('swimwear')}
+                                                                        onClick={() => handleCategoryClick('hoodies')}
                                                                         className={`link text-secondary duration-300 cursor-pointer`}
                                                                     >
-                                                                        FALANA 4
+                                                                        Hoodies
                                                                     </div>
                                                                 </li>
                                                                 <li>
                                                                     <div
-                                                                        onClick={() => handleCategoryClick('fashion')}
+                                                                        onClick={() => handleCategoryClick('casual')}
                                                                         className={`link text-secondary duration-300 view-all-btn`}
                                                                     >
                                                                         View All
@@ -192,39 +204,68 @@ const MenuOne = (props) => {
                                                             </ul>
                                                         </div>
                                                     </div>
-                                                    <div className="banner-ads-block  pl-2.5 basis-1/3">
-                                                        <div className="banner-ads-item bg-linear rounded-2xl relative overflow-hidden cursor-pointer" onClick={() => handleTypeClick('swimwear')}>
-                                                            <div className="text-content py-14 pl-8 relative z-[1]">
-                                                                <div className="text-button-uppercase text-white bg-red px-2 py-0.5 inline-block rounded-sm">Save $10</div>
-                                                                <div className="heading6 mt-2">Dive into Savings <br />on Swimwear</div>
-                                                                <div className="body1 mt-3 text-secondary">
-                                                                    Starting at <span className='text-red'>$59.99</span>
+                                                    <div className="banner-ads-block pl-2.5 basis-1/3">
+                                                        {navbarBanners.length > 0 ? (
+                                                            navbarBanners.slice(0, 2).map((banner, index) => (
+                                                                <div
+                                                                    key={banner._id}
+                                                                    className={`banner-ads-item bg-linear rounded-2xl relative overflow-hidden cursor-pointer ${index > 0 ? 'mt-8' : ''}`}
+                                                                    onClick={() => navigate(banner.buttonLink || '/shop/breadcrumb1')}
+                                                                >
+                                                                    <div className="text-content py-14 pl-8 relative z-[1]">
+                                                                        {banner.subtitle && (
+                                                                            <div className="text-button-uppercase text-white bg-red px-2 py-0.5 inline-block rounded-sm">{banner.subtitle}</div>
+                                                                        )}
+                                                                        <div className="heading6 mt-2">{banner.title}</div>
+                                                                        {banner.description && (
+                                                                            <div className="body1 mt-3 text-secondary">{banner.description}</div>
+                                                                        )}
+                                                                    </div>
+                                                                    <img
+                                                                        src={banner.image.startsWith('http') ? banner.image : `${BASE_URL}${banner.image}`}
+                                                                        width={200}
+                                                                        height={100}
+                                                                        alt={banner.title}
+                                                                        className='basis-1/3 absolute right-0 top-0 duration-700'
+                                                                    />
                                                                 </div>
-                                                            </div>
-                                                            <img
-                                                                src={'/images/slider/bg2-2.png'}
-                                                                width={200}
-                                                                height={100}
-                                                                alt='bg-img'
-                                                                className='basis-1/3 absolute right-0 top-0 duration-700'
-                                                            />
-                                                        </div>
-                                                        <div className="banner-ads-item bg-linear rounded-2xl relative overflow-hidden cursor-pointer mt-8" onClick={() => handleTypeClick('accessories')}>
-                                                            <div className="text-content py-14 pl-8 relative z-[1]">
-                                                                <div className="text-button-uppercase text-white bg-red px-2 py-0.5 inline-block rounded-sm">Save $10</div>
-                                                                <div className="heading6 mt-2">20% off <br />accessories</div>
-                                                                <div className="body1 mt-3 text-secondary">
-                                                                    Starting at <span className='text-red'>$59.99</span>
+                                                            ))
+                                                        ) : (
+                                                            <>
+                                                                <div className="banner-ads-item bg-linear rounded-2xl relative overflow-hidden cursor-pointer" onClick={() => handleTypeClick('swimwear')}>
+                                                                    <div className="text-content py-14 pl-8 relative z-[1]">
+                                                                        <div className="text-button-uppercase text-white bg-red px-2 py-0.5 inline-block rounded-sm">Save $10</div>
+                                                                        <div className="heading6 mt-2">Dive into Savings <br />on Swimwear</div>
+                                                                        <div className="body1 mt-3 text-secondary">
+                                                                            Starting at <span className='text-red'>$59.99</span>
+                                                                        </div>
+                                                                    </div>
+                                                                    <img
+                                                                        src={'/images/slider/bg2-2.png'}
+                                                                        width={200}
+                                                                        height={100}
+                                                                        alt='bg-img'
+                                                                        className='basis-1/3 absolute right-0 top-0 duration-700'
+                                                                    />
                                                                 </div>
-                                                            </div>
-                                                            <img
-                                                                src={'/images/other/bg-feature.png'}
-                                                                width={200}
-                                                                height={100}
-                                                                alt='bg-img'
-                                                                className='basis-1/3 absolute right-0 top-0 duration-700'
-                                                            />
-                                                        </div>
+                                                                <div className="banner-ads-item bg-linear rounded-2xl relative overflow-hidden cursor-pointer mt-8" onClick={() => handleTypeClick('accessories')}>
+                                                                    <div className="text-content py-14 pl-8 relative z-[1]">
+                                                                        <div className="text-button-uppercase text-white bg-red px-2 py-0.5 inline-block rounded-sm">Save $10</div>
+                                                                        <div className="heading6 mt-2">20% off <br />accessories</div>
+                                                                        <div className="body1 mt-3 text-secondary">
+                                                                            Starting at <span className='text-red'>$59.99</span>
+                                                                        </div>
+                                                                    </div>
+                                                                    <img
+                                                                        src={'/images/other/bg-feature.png'}
+                                                                        width={200}
+                                                                        height={100}
+                                                                        alt='bg-img'
+                                                                        className='basis-1/3 absolute right-0 top-0 duration-700'
+                                                                    />
+                                                                </div>
+                                                            </>
+                                                        )}
                                                     </div>
                                                 </div>
                                             </div>
@@ -250,11 +291,6 @@ const MenuOne = (props) => {
                                             FAQ
                                         </Link>
                                     </li>
-                                    <li className='h-full relative'>
-                                        <Link to="/coming-soon" className='font-[900]  text-[0.9rem] uppercase duration-300 h-full flex items-center justify-center'>
-                                            Coming Soon
-                                        </Link>
-                                    </li>
                                 </ul>
                             </div>
                         </div>
@@ -264,6 +300,9 @@ const MenuOne = (props) => {
                                 <div className="line absolute bg-line w-px h-6 -right-6"></div>
                             </div>
                             <div className="list-action flex items-center gap-4">
+                                <div>
+                                    <CurrencyLanguageSwitcher />
+                                </div>
                                 <div className="user-icon flex items-center justify-center cursor-pointer">
                                     {
                                         user ?
@@ -279,7 +318,11 @@ const MenuOne = (props) => {
                                         className={`login-popup absolute top-[74px] w-[180px] flex flex-col justify-center  p-7 rounded-xl bg-white box-shadow-sm 
                                             ${openLoginPopup ? 'open' : ''}`}
                                     >
-                                        <Link to={'/my-account'} className="button-main bg-white text-black border border-black w-full text-center icon p-0 !px-2 !py-2 !text-[0.8rem]">Dashboard</Link>
+                                        {user && user.role === 'admin' ? (
+                                            <Link to={'/admin/dashboard'} className="button-main bg-white text-black border border-black w-full text-center icon p-0 !px-2 !py-2 !text-[0.8rem]">Admin Dashboard</Link>
+                                        ) : (
+                                            <Link to={'/my-account'} className="button-main bg-white text-black border border-black w-full text-center icon p-0 !px-2 !py-2 !text-[0.8rem]">My Account</Link>
+                                        )}
                                         <div className="bottom mt-4 pt-4 border-t border-[#000]"></div>
                                         <button onClick={handleLogout} className="button-main bg-white text-black border border-black w-[60%]  text-center icon p-0 !px-0 !py-2 !text-[0.8rem] self-center">Logout</button>
                                     </div>
@@ -311,8 +354,18 @@ const MenuOne = (props) => {
                                 <Link to={'/'} className='logo text-3xl font-semibold text-center icon'>OPREEYO</Link>
                             </div>
                             <div className="form-search relative mt-2 icon">
-                                <Icon.MagnifyingGlass size={20} className='absolute left-3 top-1/2 -translate-y-1/2 cursor-pointer' />
-                                <input type="text" placeholder='What are you looking for?' className=' h-12 rounded-lg border border-line text-sm w-full pl-10 pr-4' />
+                                <Icon.MagnifyingGlass size={20} className='absolute left-3 top-1/2 -translate-y-1/2 cursor-pointer z-10' />
+                                <input 
+                                    type="text" 
+                                    placeholder='What are you looking for?' 
+                                    className=' h-12 rounded-lg border border-line text-sm w-full pl-10 pr-4' 
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter' && e.target.value.trim()) {
+                                            navigate(`/shop/breadcrumb1?search=${encodeURIComponent(e.target.value.trim())}`);
+                                            handleMenuMobile(); // Close mobile menu
+                                        }
+                                    }}
+                                />
                             </div>
                             <div className="list-nav mt-6">
                                 <ul>
@@ -355,11 +408,7 @@ const MenuOne = (props) => {
                                                             FAQs
                                                         </Link>
                                                     </li>
-                                                    <li>
-                                                        <Link to="/coming-soon" className={`link text-secondary duration-300 ${pathname === '/pages/coming-soon' ? 'active' : ''}`}>
-                                                            Coming Soon
-                                                        </Link>
-                                                    </li>
+                                                    
                                                 </ul>
                                             </div>
                                         </div>

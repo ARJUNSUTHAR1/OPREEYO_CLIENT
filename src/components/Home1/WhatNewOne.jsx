@@ -11,7 +11,10 @@ const WhatNewOne= ({ data, start, limit }) => {
         setActiveTab(type);
     };
 
-    const filteredProducts = data.filter((product) => product.type === activeTab && (product.category === 'fashion'));
+    // Filter products by type - removed category filter to show all fashion items
+    const filteredProducts = data && data.length > 0 
+        ? data.filter((product) => product.type === activeTab) 
+        : [];
 
     return (
         <>
@@ -38,9 +41,15 @@ const WhatNewOne= ({ data, start, limit }) => {
                     </div>
 
                     <div className="list-product hide-product-sold !grid md:!grid-cols-4 !grid-cols-2 justify-center md:justify-start sm:!gap-[30px] !gap-y-[100px] gap-x-[10px] md:!mt-10 !mt-6">
-                        {filteredProducts.slice(start, limit).map((prd, index) => (
-                            <Product data={prd} type='grid' key={index} style='style-1' />
-                        ))}
+                        {filteredProducts.length > 0 ? (
+                            filteredProducts.slice(start, limit).map((prd, index) => (
+                                <Product data={prd} type='grid' key={prd._id || index} style='style-1' />
+                            ))
+                        ) : (
+                            <div className="col-span-full text-center py-10">
+                                <p className="text-secondary">No products found for {activeTab}</p>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>

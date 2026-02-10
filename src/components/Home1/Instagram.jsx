@@ -17,7 +17,7 @@ const Instagram = () => {
                         <Swiper
                             spaceBetween={12}
                             slidesPerView={2}
-                            loop={true}
+                            rewind={true}
                             modules={[Autoplay]}
                             autoplay={{
                                 delay: 4000,

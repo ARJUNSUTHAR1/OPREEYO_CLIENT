@@ -4,7 +4,7 @@ import MenuOne from '../../components/Header/Menu/MenuOne';
 import Breadcrumb from '../../components/Breadcrumb/Breadcrumb';
 import Footer from '../../components/Footer/Footer';
 import * as Icon from "@phosphor-icons/react/dist/ssr";
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import useAuthStore from '../../store/authStore'; // ✅ Zustand store
@@ -23,6 +23,7 @@ const Login = () => {
 
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
 
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target;
@@ -54,8 +55,22 @@ const Login = () => {
             setUser(res.data.user);
             setToken(res.data.token);
 
-            // Redirect
-            navigate('/');
+            // ✅ Also save to localStorage for admin panel
+            localStorage.setItem('token', res.data.token);
+            localStorage.setItem('user', JSON.stringify(res.data.user));
+
+            // Redirect to admin dashboard if user is admin
+            if (res.data.user.role === 'admin') {
+                navigate('/admin/dashboard');
+            } else {
+                // Check if there's a redirect parameter
+                const redirect = searchParams.get('redirect');
+                if (redirect) {
+                    navigate(decodeURIComponent(redirect));
+                } else {
+                    navigate('/');
+                }
+            }
         } catch (err) {
             toast.error(err?.response?.data?.message || "Login failed");
         } finally {

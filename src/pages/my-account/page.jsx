@@ -9,6 +9,7 @@ import { motion } from 'framer-motion'
 import ProductCreateForm from '../../components/ProductCreate/ProductCreate'
 import useProductStore from '../../store/productStore'
 import useAuthStore from '../../store/authStore';
+import useCurrencyStore from '../../store/currencyStore';
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import axios from 'axios'
@@ -19,12 +20,16 @@ const MyAccount = () => {
     const [activeOrders, setActiveOrders] = useState('all')
     const [openDetail, setOpenDetail] = useState(false)
     const [editingProduct, setEditingProduct] = useState(null);
+    const [userOrders, setUserOrders] = useState([]);
+    const [selectedOrderDetail, setSelectedOrderDetail] = useState(null);
+    const [ordersLoading, setOrdersLoading] = useState(false);
 
     const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
     const navigate = useNavigate()
 
     const { products, fetchProducts, setProducts } = useProductStore()
     const user = useAuthStore(state => state.user);
+    const { formatPrice } = useCurrencyStore();
 
     const logout = useAuthStore((state) => state.logout);
 
@@ -39,7 +44,37 @@ const MyAccount = () => {
         fetchProducts()
     }, [])
 
-    console.log(products);
+    useEffect(() => {
+        if (user && activeTab === 'orders') {
+            fetchUserOrders();
+        }
+    }, [user, activeTab]);
+
+    const fetchUserOrders = async () => {
+        try {
+            setOrdersLoading(true);
+            const token = localStorage.getItem('token');
+            const response = await axios.get(`${BASE_URL}/api/payment/my-orders`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setUserOrders(response.data);
+        } catch (error) {
+            console.error('Error fetching orders:', error);
+        } finally {
+            setOrdersLoading(false);
+        }
+    };
+
+    const getStatusColor = (status) => {
+        switch(status) {
+            case 'delivered': return 'bg-green-100 text-green-800';
+            case 'shipped': return 'bg-purple-100 text-purple-800';
+            case 'processing': return 'bg-blue-100 text-blue-800';
+            case 'cancelled': return 'bg-red-100 text-red-800';
+            case 'returned': return 'bg-orange-100 text-orange-800';
+            default: return 'bg-yellow-100 text-yellow-800';
+        }
+    };
 
     const handleActiveAddress = (order) => {
         setActiveAddress(prevOrder => prevOrder === order ? null : order)
@@ -49,9 +84,11 @@ const MyAccount = () => {
         setActiveOrders(order)
     }
 
-    if (!user) {
-        navigate("/login")
-    }
+    useEffect(() => {
+        if (!user) {
+            navigate("/login");
+        }
+    }, [user, navigate]);
 
     const handleEdit = (product) => {
         setEditingProduct(product);
@@ -59,14 +96,47 @@ const MyAccount = () => {
     };
 
     const handleDelete = async (id) => {
-        console.log(id);
         try {
-            const res = await axios.delete(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/products/${id}`);
+            const res = await axios.delete(`${BASE_URL}/api/products/${id}`);
             toast.success("Product deleted");
             const filtered = products.filter((p) => p._id !== id);
             setProducts(filtered);
         } catch (err) {
             toast.error("Failed to delete");
+        }
+    };
+
+    const [showReturnModal, setShowReturnModal] = useState(false);
+    const [returnReason, setReturnReason] = useState('');
+    const [returningOrder, setReturningOrder] = useState(null);
+
+    const handleRequestReturn = (order) => {
+        setReturningOrder(order);
+        setShowReturnModal(true);
+        setReturnReason('');
+    };
+
+    const handleSubmitReturn = async () => {
+        if (!returnReason.trim()) {
+            toast.error('Please provide a reason for return');
+            return;
+        }
+
+        try {
+            const token = localStorage.getItem('token');
+            await axios.post(`${BASE_URL}/api/payment/request-return`, {
+                orderId: returningOrder._id,
+                returnReason: returnReason
+            }, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            toast.success('Return request submitted successfully');
+            setShowReturnModal(false);
+            setReturningOrder(null);
+            setReturnReason('');
+            fetchUserOrders();
+        } catch (error) {
+            toast.error(error.response?.data?.message || 'Failed to submit return request');
         }
     };
 
@@ -305,7 +375,7 @@ const MyAccount = () => {
                                                         <td className="py-3">
                                                             <Link to={`/product/${product.slug || 'default'}`} className="product flex items-center gap-3">
                                                                 <img
-                                                                    src={`${BASE_URL}${product.thumbImage?.[0] || product.images?.[0]}`}
+                                                                    src={product.thumbImage?.[0] ? `${BASE_URL}${product.thumbImage[0]}` : (product.images?.[0] ? `${BASE_URL}${product.images[0]}` : '/images/product/1000x1000.png')}
                                                                     width={400}
                                                                     height={400}
                                                                     alt={product.name}
@@ -319,7 +389,7 @@ const MyAccount = () => {
                                                         </td>
 
                                                         {/* Price */}
-                                                        <td className="py-3 price">₹{product.price}</td>
+                                                        <td className="py-3 price">{formatPrice(product.price, product.currency || 'INR')}</td>
 
 
                                                         {/* Created At */}
@@ -354,15 +424,12 @@ const MyAccount = () => {
                                 <h6 className="heading6">Your Orders</h6>
                                 <div className="w-full overflow-x-auto">
                                     <div className="menu-tab grid grid-cols-5 max-lg:w-[500px] border-b border-[#d1cbcb] mt-3">
-                                        {['all', 'pending', 'delivery', 'completed', 'canceled'].map((item, index) => (
+                                        {['all', 'pending', 'shipped', 'delivered', 'cancelled'].map((item, index) => (
                                             <button
                                                 key={index}
-                                                className={`item relative px-3 py-2.5 text-secondary text-center duration-300 hover:text-black border-b-2 ${activeOrders === item ? 'active border-black' : 'border-transparent'}`}
+                                                className={`item relative px-3 py-2.5 text-secondary text-center duration-300 hover:text-black border-b-2 capitalize ${activeOrders === item ? 'active border-black' : 'border-transparent'}`}
                                                 onClick={() => handleActiveOrders(item)}
                                             >
-                                                {/* {activeOrders === item && (
-                                                <motion.span layoutId='active-pill' className='absolute inset-0 border-black border-b-2'></motion.span>
-                                                )} */}
                                                 <span className='relative text-button z-[1]'>
                                                     {item}
                                                 </span>
@@ -371,208 +438,109 @@ const MyAccount = () => {
                                     </div>
                                 </div>
                                 <div className="list_order icon">
-                                    <div className="order_item mt-5 border border-[#d1cbcb] rounded-lg box-shadow-xs">
-                                        <div className="flex flex-wrap items-center justify-between gap-4 p-5 border-b border-[#d1cbcb]">
-                                            <div className="flex items-center gap-2">
-                                                <strong className="text-title">Order Number:</strong>
-                                                <strong className="order_number text-button uppercase">s184989823</strong>
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                <strong className="text-title">Order status:</strong>
-                                                <span className="tag px-4 py-1.5 rounded-full bg-opacity-10 bg-purple text-purple caption1 font-semibold">Delivery</span>
-                                            </div>
+                                    {ordersLoading ? (
+                                        <div className="text-center py-8">
+                                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black mx-auto mb-2"></div>
+                                            <p className="text-secondary">Loading orders...</p>
                                         </div>
-                                        <div className="list_prd px-5">
-                                            <div className="prd_item flex flex-wrap items-center justify-between gap-3 py-5 border-b border-[#d1cbcb]">
-                                                <Link to={'/product/default'} className="flex items-center gap-5">
-                                                    <div className="bg-img flex-shrink-0 md:w-[100px] w-20 aspect-square rounded-lg overflow-hidden">
-                                                        <img
-                                                            src={'/images/product/1000x1000.png'}
-                                                            width={1000}
-                                                            height={1000}
-                                                            alt={'Contrasting sheepskin sweatshirt'}
-                                                            className='w-full h-full object-cover'
-                                                        />
-                                                    </div>
-                                                    <div>
-                                                        <div className="prd_name text-title">Contrasting sheepskin sweatshirt</div>
-                                                        <div className="caption1 text-secondary mt-2">
-                                                            <span className="prd_size uppercase">XL</span>
-                                                            <span>/</span>
-                                                            <span className="prd_color capitalize">Yellow</span>
-                                                        </div>
-                                                    </div>
-                                                </Link>
-                                                <div className='text-title'>
-                                                    <span className="prd_quantity">1</span>
-                                                    <span> X </span>
-                                                    <span className="prd_price">$45.00</span>
+                                    ) : userOrders.length === 0 ? (
+                                        <div className="text-center py-8 text-secondary">
+                                            <Icon.Package size={48} className="mx-auto mb-3" />
+                                            <p>No orders yet</p>
+                                            <Link to="/shop/breadcrumb1" className="button-main mt-4 inline-block">Start Shopping</Link>
+                                        </div>
+                                    ) : (
+                                        userOrders
+                                            .filter(order => activeOrders === 'all' || order.orderStatus === activeOrders)
+                                            .map((order) => (
+                                        <div key={order._id} className="order_item mt-5 border border-[#d1cbcb] rounded-lg box-shadow-xs">
+                                            <div className="flex flex-wrap items-center justify-between gap-4 p-5 border-b border-[#d1cbcb]">
+                                                <div className="flex items-center gap-2">
+                                                    <strong className="text-title">Order:</strong>
+                                                    <strong className="order_number text-button uppercase">{order.orderNumber}</strong>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <span className={`tag px-4 py-1.5 rounded-full caption1 font-semibold capitalize ${getStatusColor(order.orderStatus)}`}>
+                                                        {order.orderStatus}
+                                                    </span>
                                                 </div>
                                             </div>
-                                            <div className="prd_item flex flex-wrap items-center justify-between gap-3 py-5 border-b border-[#d1cbcb]">
-                                                <Link to={'/product/default'} className="flex items-center gap-5">
-                                                    <div className="bg-img flex-shrink-0 md:w-[100px] w-20 aspect-square rounded-lg overflow-hidden">
-                                                        <img
-                                                            src={'/images/product/1000x1000.png'}
-                                                            width={1000}
-                                                            height={1000}
-                                                            alt={'Contrasting sheepskin sweatshirt'}
-                                                            className='w-full h-full object-cover'
-                                                        />
-                                                    </div>
-                                                    <div>
-                                                        <div className="prd_name text-title">Contrasting sheepskin sweatshirt</div>
-                                                        <div className="caption1 text-secondary mt-2">
-                                                            <span className="prd_size uppercase">XL</span>
-                                                            <span>/</span>
-                                                            <span className="prd_color capitalize">White</span>
+                                            <div className="list_prd px-5">
+                                                {order.items?.map((item, idx) => (
+                                                    <div key={idx} className="prd_item flex flex-wrap items-center justify-between gap-3 py-5 border-b border-[#d1cbcb]">
+                                                        <div className="flex items-center gap-5">
+                                                            <div className="bg-img flex-shrink-0 w-16 aspect-square rounded-lg overflow-hidden">
+                                                                <img
+                                                                    src={item.image ? (item.image.startsWith('http') ? item.image : `${BASE_URL}${item.image}`) : '/images/product/1000x1000.png'}
+                                                                    alt={item.name}
+                                                                    className='w-full h-full object-cover'
+                                                                />
+                                                            </div>
+                                                            <div>
+                                                                <div className="prd_name text-title">{item.name}</div>
+                                                                <div className="caption1 text-secondary mt-1">
+                                                                    <span className="uppercase">{item.size}</span>
+                                                                    <span> / </span>
+                                                                    <span className="capitalize">{item.color}</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div className='text-title'>
+                                                            {item.quantity} x {formatPrice(item.price, order.currency || 'INR')}
                                                         </div>
                                                     </div>
-                                                </Link>
-                                                <div className='text-title'>
-                                                    <span className="prd_quantity">2</span>
-                                                    <span> X </span>
-                                                    <span className="prd_price">$70.00</span>
+                                                ))}
+                                            </div>
+                                            <div className="px-5 py-3 flex justify-between items-center border-b border-[#d1cbcb]">
+                                                <span className="text-secondary text-sm">{new Date(order.createdAt).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                                                <span className="text-button">Total: {formatPrice(order.total, order.currency || 'INR')}</span>
+                                            </div>
+                                            {order.trackingNumber && (
+                                                <div className="px-5 py-3 bg-surface flex items-center gap-2">
+                                                    <Icon.MapPin size={16} />
+                                                    <span className="text-sm">Tracking: <strong>{order.trackingNumber}</strong></span>
+                                                    {order.trackingUrl && (
+                                                        <a href={order.trackingUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 text-sm underline ml-2">Track</a>
+                                                    )}
                                                 </div>
+                                            )}
+                                            <div className="flex flex-wrap gap-3 p-5">
+                                                <button className="button-main !py-2 !text-sm" onClick={() => { setSelectedOrderDetail(order); setOpenDetail(true); }}>Order Details</button>
+                                                {order.trackingNumber && (
+                                                    <Link 
+                                                        to={`/track-order/${order.orderNumber}`}
+                                                        className="button-main bg-blue-600 hover:bg-blue-700 text-white !py-2 !text-sm"
+                                                    >
+                                                        Track Order
+                                                    </Link>
+                                                )}
+                                                {order.orderStatus === 'delivered' && order.returnStatus === 'none' && (
+                                                    <button 
+                                                        className="button-main bg-surface border border-[#d1cbcb] hover:bg-black text-black hover:text-white !py-2 !text-sm"
+                                                        onClick={() => handleRequestReturn(order)}
+                                                    >
+                                                        Request Return
+                                                    </button>
+                                                )}
+                                                {order.returnStatus === 'requested' && (
+                                                    <span className="px-3 py-2 bg-yellow-100 text-yellow-800 rounded text-sm">
+                                                        Return Requested
+                                                    </span>
+                                                )}
+                                                {order.returnStatus === 'approved' && (
+                                                    <span className="px-3 py-2 bg-green-100 text-green-800 rounded text-sm">
+                                                        Return Approved
+                                                    </span>
+                                                )}
+                                                {order.returnStatus === 'rejected' && (
+                                                    <span className="px-3 py-2 bg-red-100 text-red-800 rounded text-sm">
+                                                        Return Rejected
+                                                    </span>
+                                                )}
                                             </div>
                                         </div>
-                                        <div className="flex flex-wrap gap-4 p-5">
-                                            <button className="button-main" onClick={() => setOpenDetail(true)}>Order Details</button>
-                                            <button className="button-main bg-surface border border-[#d1cbcb] hover:bg-black text-black hover:text-white">Cancel Order</button>
-                                        </div>
-                                    </div>
-                                    <div className="order_item mt-5 border border-[#d1cbcb] rounded-lg box-shadow-xs">
-                                        <div className="flex flex-wrap items-center justify-between gap-4 p-5 border-b border-[#d1cbcb]">
-                                            <div className="flex items-center gap-2">
-                                                <strong className="text-title">Order Number:</strong>
-                                                <strong className="order_number text-button uppercase">s184989824</strong>
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                <strong className="text-title">Order status:</strong>
-                                                <span className="tag px-4 py-1.5 rounded-full bg-opacity-10 bg-yellow text-yellow caption1 font-semibold">Pending</span>
-                                            </div>
-                                        </div>
-                                        <div className="list_prd px-5">
-                                            <div className="prd_item flex flex-wrap items-center justify-between gap-3 py-5 border-b border-[#d1cbcb]">
-                                                <Link to={'/product/default'} className="flex items-center gap-5">
-                                                    <div className="bg-img flex-shrink-0 md:w-[100px] w-20 aspect-square rounded-lg overflow-hidden">
-                                                        <img
-                                                            src={'/images/product/1000x1000.png'}
-                                                            width={1000}
-                                                            height={1000}
-                                                            alt={'Contrasting sheepskin sweatshirt'}
-                                                            className='w-full h-full object-cover'
-                                                        />
-                                                    </div>
-                                                    <div>
-                                                        <div className="prd_name text-title">Contrasting sheepskin sweatshirt</div>
-                                                        <div className="caption1 text-secondary mt-2">
-                                                            <span className="prd_size uppercase">L</span>
-                                                            <span>/</span>
-                                                            <span className="prd_color capitalize">Pink</span>
-                                                        </div>
-                                                    </div>
-                                                </Link>
-                                                <div className='text-title'>
-                                                    <span className="prd_quantity">1</span>
-                                                    <span> X </span>
-                                                    <span className="prd_price">$69.00</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div className="flex flex-wrap gap-4 p-5">
-                                            <button className="button-main" onClick={() => setOpenDetail(true)}>Order Details</button>
-                                            <button className="button-main bg-surface border border-[#d1cbcb] hover:bg-black text-black hover:text-white">Cancel Order</button>
-                                        </div>
-                                    </div>
-                                    <div className="order_item mt-5 border border-[#d1cbcb] rounded-lg box-shadow-xs">
-                                        <div className="flex flex-wrap items-center justify-between gap-4 p-5 border-b border-[#d1cbcb]">
-                                            <div className="flex items-center gap-2">
-                                                <strong className="text-title">Order Number:</strong>
-                                                <strong className="order_number text-button uppercase">s184989824</strong>
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                <strong className="text-title">Order status:</strong>
-                                                <span className="tag px-4 py-1.5 rounded-full bg-opacity-10 bg-success text-success caption1 font-semibold">Completed</span>
-                                            </div>
-                                        </div>
-                                        <div className="list_prd px-5">
-                                            <div className="prd_item flex flex-wrap items-center justify-between gap-3 py-5 border-b border-[#d1cbcb]">
-                                                <Link to={'/product/default'} className="flex items-center gap-5">
-                                                    <div className="bg-img flex-shrink-0 md:w-[100px] w-20 aspect-square rounded-lg overflow-hidden">
-                                                        <img
-                                                            src={'/images/product/1000x1000.png'}
-                                                            width={1000}
-                                                            height={1000}
-                                                            alt={'Contrasting sheepskin sweatshirt'}
-                                                            className='w-full h-full object-cover'
-                                                        />
-                                                    </div>
-                                                    <div>
-                                                        <div className="prd_name text-title">Contrasting sheepskin sweatshirt</div>
-                                                        <div className="caption1 text-secondary mt-2">
-                                                            <span className="prd_size uppercase">L</span>
-                                                            <span>/</span>
-                                                            <span className="prd_color capitalize">White</span>
-                                                        </div>
-                                                    </div>
-                                                </Link>
-                                                <div className='text-title'>
-                                                    <span className="prd_quantity">1</span>
-                                                    <span> X </span>
-                                                    <span className="prd_price">$32.00</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div className="flex flex-wrap gap-4 p-5">
-                                            <button className="button-main" onClick={() => setOpenDetail(true)}>Order Details</button>
-                                            <button className="button-main bg-surface border border-[#d1cbcb] hover:bg-black text-black hover:text-white">Cancel Order</button>
-                                        </div>
-                                    </div>
-                                    <div className="order_item mt-5 border border-[#d1cbcb] rounded-lg box-shadow-xs">
-                                        <div className="flex flex-wrap items-center justify-between gap-4 p-5 border-b border-[#d1cbcb]">
-                                            <div className="flex items-center gap-2">
-                                                <strong className="text-title">Order Number:</strong>
-                                                <strong className="order_number text-button uppercase">s184989824</strong>
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                <strong className="text-title">Order status:</strong>
-                                                <span className="tag px-4 py-1.5 rounded-full bg-opacity-10 bg-red text-red caption1 font-semibold">Canceled</span>
-                                            </div>
-                                        </div>
-                                        <div className="list_prd px-5">
-                                            <div className="prd_item flex flex-wrap items-center justify-between gap-3 py-5 border-b border-[#d1cbcb]">
-                                                <Link to={'/product/default'} className="flex items-center gap-5">
-                                                    <div className="bg-img flex-shrink-0 md:w-[100px] w-20 aspect-square rounded-lg overflow-hidden">
-                                                        <img
-                                                            src={'/images/product/1000x1000.png'}
-                                                            width={1000}
-                                                            height={1000}
-                                                            alt={'Contrasting sheepskin sweatshirt'}
-                                                            className='w-full h-full object-cover'
-                                                        />
-                                                    </div>
-                                                    <div>
-                                                        <div className="prd_name text-title">Contrasting sheepskin sweatshirt</div>
-                                                        <div className="caption1 text-secondary mt-2">
-                                                            <span className="prd_size uppercase">M</span>
-                                                            <span>/</span>
-                                                            <span className="prd_color capitalize">Black</span>
-                                                        </div>
-                                                    </div>
-                                                </Link>
-                                                <div className='text-title'>
-                                                    <span className="prd_quantity">1</span>
-                                                    <span> X </span>
-                                                    <span className="prd_price">$49.00</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div className="flex flex-wrap gap-4 p-5">
-                                            <button className="button-main" onClick={() => setOpenDetail(true)}>Order Details</button>
-                                            <button className="button-main bg-surface border border-[#d1cbcb] hover:bg-black text-black hover:text-white">Cancel Order</button>
-                                        </div>
-                                    </div>
+                                    ))
+                                    )}
                                 </div>
                             </div>
                             <div className={`tab_address text-content w-full p-7 border border-[#d1cbcb] rounded-xl ${activeTab === 'address' ? 'block' : 'hidden'} icon`}>
@@ -769,6 +737,42 @@ const MyAccount = () => {
                 </div>
             </div>
             <Footer />
+            
+            {/* Return Request Modal */}
+            {showReturnModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={() => setShowReturnModal(false)}>
+                    <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4" onClick={(e) => e.stopPropagation()}>
+                        <h3 className="heading5 mb-4">Request Return</h3>
+                        <p className="text-sm text-secondary mb-4">Order: {returningOrder?.orderNumber}</p>
+                        <textarea
+                            className="w-full border border-[#d1cbcb] px-4 py-3 rounded-lg mb-4"
+                            rows="4"
+                            placeholder="Please provide a reason for return..."
+                            value={returnReason}
+                            onChange={(e) => setReturnReason(e.target.value)}
+                        />
+                        <div className="flex gap-3">
+                            <button
+                                onClick={handleSubmitReturn}
+                                className="button-main flex-1"
+                            >
+                                Submit Return Request
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setShowReturnModal(false);
+                                    setReturningOrder(null);
+                                    setReturnReason('');
+                                }}
+                                className="button-main bg-surface border border-[#d1cbcb] text-black hover:bg-black hover:text-white flex-1"
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <div className={`modal-order-detail-block flex items-center justify-center icon`} onClick={() => setOpenDetail(false)}>
                 <div className={`modal-order-detail-main grid grid-cols-2 w-[1160px] bg-white rounded-2xl ${openDetail ? 'open' : ''}`} onClick={(e) => e.stopPropagation()}>
                     <div className="info p-10 border-r border-[#d1cbcb]">

@@ -9,7 +9,6 @@ import { ModalSearchProvider } from './context/ModalSearchContext'
 import { ModalQuickviewProvider } from './context/ModalQuickviewContext'
 import { BrowserRouter } from 'react-router-dom';
 
-
 const GlobalProvider = ({ children }) => {
     return (
         <BrowserRouter>

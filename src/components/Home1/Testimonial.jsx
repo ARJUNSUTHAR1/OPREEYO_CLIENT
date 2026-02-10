@@ -20,7 +20,7 @@ const Testimonial = ({ data, limit }) => {
                             spaceBetween={12}
                             slidesPerView={1}
                             pagination={{ clickable: true }}
-                            loop={true}
+                            rewind={true}
                             modules={[Pagination, Autoplay]}
                             breakpoints={{
                                 680: {

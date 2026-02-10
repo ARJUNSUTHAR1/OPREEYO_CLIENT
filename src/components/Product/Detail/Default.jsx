@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams, useNavigate } from 'react-router-dom'
 import { Swiper, SwiperSlide } from 'swiper/react'
 import { Navigation, Thumbs, Scrollbar } from 'swiper/modules';
 import SwiperCore from 'swiper'
@@ -17,11 +17,14 @@ import { useWishlist } from '../../../context/WishlistContext'
 import { useModalWishlistContext } from '../../../context/ModalWishlistContext'
 import { useCompare } from '../../../context/CompareContext'
 import { useModalCompareContext } from '../../../context/ModalCompareContext'
+import useCurrencyStore from '../../../store/currencyStore'
+import { toast } from 'react-toastify'
 
 SwiperCore.use([Navigation, Thumbs])
 
 const Default = ({ data }) => {
     const [searchParams] = useSearchParams()
+    const navigate = useNavigate()
     const productId = searchParams.get('id') || '1'
 
     const swiperRef = useRef(null)
@@ -39,11 +42,19 @@ const Default = ({ data }) => {
     const { openModalWishlist } = useModalWishlistContext()
     const { addToCompare, removeFromCompare, compareState } = useCompare()
     const { openModalCompare } = useModalCompareContext()
+    const { formatPrice } = useCurrencyStore()
     const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
 
-    let productMain = data.find(product => product._id.toString() === productId)
+    let productMain = data.find(product => (product._id || product.id)?.toString() === productId)
     if (!productMain) productMain = data[0]
+
+    // Build images array from thumbImage (string) + extraImages (array)
+    const productImages = [
+        ...(productMain.thumbImage ? (Array.isArray(productMain.thumbImage) ? productMain.thumbImage : [productMain.thumbImage]) : []),
+        ...(productMain.extraImages || []),
+        ...(productMain.images || []),
+    ].filter(Boolean);
 
     // const percentSale = Math.floor(100 - ((productMain?.price / productMain.originPrice) * 100))
 
@@ -53,41 +64,53 @@ const Default = ({ data }) => {
     const handleActiveColor = (item) => setActiveColor(item)
     const handleActiveSize = (item) => setActiveSize(item)
 
+    // Normalize the product id
+    const normalizedId = productMain._id || productMain.id;
+
     const handleIncreaseQuantity = () => {
-        productMain.quantityPurchase += 1
-        updateCart(productMain.id, productMain.quantityPurchase, activeSize, activeColor)
+        productMain.quantityPurchase = (productMain.quantityPurchase || 1) + 1
+        updateCart(normalizedId, productMain.quantityPurchase, activeSize, activeColor)
     }
 
     const handleDecreaseQuantity = () => {
-        if (productMain.quantityPurchase > 1) {
+        if ((productMain.quantityPurchase || 1) > 1) {
             productMain.quantityPurchase -= 1
-            updateCart(productMain.id, productMain.quantityPurchase, activeSize, activeColor)
+            updateCart(normalizedId, productMain.quantityPurchase, activeSize, activeColor)
         }
     }
 
     const handleAddToCart = () => {
-        if (!cartState.cartArray.find(item => item.id === productMain.id)) {
-            addToCart({ ...productMain })
+        const cartItem = { ...productMain, id: normalizedId }
+        if (!cartState.cartArray.find(item => item.id === normalizedId)) {
+            addToCart(cartItem)
         }
-        updateCart(productMain.id, productMain.quantityPurchase, activeSize, activeColor)
+        updateCart(normalizedId, productMain.quantityPurchase || 1, activeSize, activeColor)
         openModalCart()
     }
 
     const handleAddToWishlist = () => {
-        if (wishlistState.wishlistArray.some(item => item.id === productMain.id)) {
-            removeFromWishlist(productMain.id)
+        // Check if user is logged in
+        const token = localStorage.getItem('token');
+        if (!token) {
+            toast.error('Please login to add items to wishlist');
+            navigate('/login?redirect=' + encodeURIComponent(window.location.pathname + window.location.search));
+            return;
+        }
+        
+        if (wishlistState.wishlistArray.some(item => item.id === normalizedId)) {
+            removeFromWishlist(normalizedId)
         } else {
-            addToWishlist(productMain)
+            addToWishlist({ ...productMain, id: normalizedId })
         }
         openModalWishlist()
     }
 
     const handleAddToCompare = () => {
         if (compareState.compareArray.length < 3) {
-            if (compareState.compareArray.some(item => item.id === productMain.id)) {
-                removeFromCompare(productMain.id)
+            if (compareState.compareArray.some(item => item.id === normalizedId)) {
+                removeFromCompare(normalizedId)
             } else {
-                addToCompare(productMain)
+                addToCompare({ ...productMain, id: normalizedId })
             }
             openModalCompare()
         } else {
@@ -97,8 +120,6 @@ const Default = ({ data }) => {
 
     const handleActiveTab = (tab) => setActiveTab(tab)
 
-    console.log(productMain);
-    
     return (
         <>
             <div className="product-detail default">
@@ -112,7 +133,7 @@ const Default = ({ data }) => {
                                 modules={[Thumbs]}
                                 className="mySwiper2 rounded-2xl overflow-hidden"
                             >
-                                {productMain.thumbImage?.map((item, index) => (
+                                {productImages.length > 0 ? productImages.map((item, index) => (
                                     <SwiperSlide
                                         key={index}
                                         onClick={() => {
@@ -121,15 +142,20 @@ const Default = ({ data }) => {
                                         }}
                                     >
                                         <img
-                                            src={`${BASE_URL}${item}`}
+                                            src={item.startsWith('http') ? item : `${BASE_URL}${item}`}
                                             width={1000}
                                             height={1000}
                                             alt='prd-img'
                                             className='w-full aspect-[3/4] object-cover'
                                         />
                                     </SwiperSlide>
-                                ))}
+                                )) : (
+                                    <SwiperSlide>
+                                        <img src='/images/product/1000x1000.png' alt='placeholder' className='w-full aspect-[3/4] object-cover' />
+                                    </SwiperSlide>
+                                )}
                             </Swiper>
+                            {productImages.length > 1 && (
                             <Swiper
                                 onSwiper={(swiper) => {
                                     handleSwiper(swiper)
@@ -141,12 +167,12 @@ const Default = ({ data }) => {
                                 modules={[Navigation, Thumbs]}
                                 className="mySwiper"
                             >
-                                {productMain.thumbImage?.map((item, index) => (
+                                {productImages.map((item, index) => (
                                     <SwiperSlide
                                         key={index}
                                     >
                                         <img
-                                            src={`${BASE_URL}${item}`}
+                                            src={item.startsWith('http') ? item : `${BASE_URL}${item}`}
                                             width={1000}
                                             height={1000}
                                             alt='prd-img'
@@ -155,6 +181,7 @@ const Default = ({ data }) => {
                                     </SwiperSlide>
                                 ))}
                             </Swiper>
+                            )}
                             <div className={`popup-img ${openPopupImg ? 'open' : ''}`}>
                                 <span
                                     className="close-popup-btn absolute top-4 right-4 z-[2] cursor-pointer"
@@ -169,13 +196,13 @@ const Default = ({ data }) => {
                                     slidesPerView={1}
                                     modules={[Navigation, Thumbs]}
                                     navigation={true}
-                                    loop={true}
+                                    loop={productImages.length > 1}
                                     className="popupSwiper"
                                     onSwiper={(swiper) => {
                                         swiperRef.current = swiper
                                     }}
                                 >
-                                    {productMain.thumbImage?.map((item, index) => (
+                                    {productImages.map((item, index) => (
                                         <SwiperSlide
                                             key={index}
                                             onClick={() => {
@@ -183,7 +210,7 @@ const Default = ({ data }) => {
                                             }}
                                         >
                                             <img
-                                                src={`${BASE_URL}${item}`}
+                                                src={item.startsWith('http') ? item : `${BASE_URL}${item}`}
                                                 width={1000}
                                                 height={1000}
                                                 alt='prd-img'
@@ -204,10 +231,10 @@ const Default = ({ data }) => {
                                     <div className="heading4 mt-1 icon">{productMain.name}</div>
                                 </div>
                                 <div
-                                    className={`add-wishlist-btn w-12 h-12 flex items-center justify-center border border-line cursor-pointer rounded-xl duration-300 hover:bg-black hover:text-white ${wishlistState.wishlistArray.some(item => item.id === productMain.id) ? 'active' : ''}`}
+                                    className={`add-wishlist-btn w-12 h-12 flex items-center justify-center border border-line cursor-pointer rounded-xl duration-300 hover:bg-black hover:text-white ${wishlistState.wishlistArray.some(item => item.id === normalizedId) ? 'active' : ''}`}
                                     onClick={handleAddToWishlist}
                                 >
-                                    {wishlistState.wishlistArray.some(item => item.id === productMain.id) ? (
+                                    {wishlistState.wishlistArray.some(item => item.id === normalizedId) ? (
                                         <>
                                             <Icon.Heart size={24} weight='fill' className='text-white' />
                                         </>
@@ -223,9 +250,11 @@ const Default = ({ data }) => {
                                 <span className='caption1 text-secondary'>(1.234 reviews)</span>
                             </div>
                             <div className="flex items-center gap-3 flex-wrap mt-5 pb-6 border-b border-line">
-                                <div className="product-price heading5">${productMain.price}.00</div>
+                                <div className="product-price heading5">{formatPrice(productMain.price, productMain.currency || 'INR')}</div>
                                 <div className='w-px h-4 bg-line'></div>
-                                <div className="product-origin-price font-normal text-secondary2"><del>${productMain.originPrice}.00</del></div>
+                                {productMain.originPrice && (
+                                    <div className="product-origin-price font-normal text-secondary2"><del>{formatPrice(productMain.originPrice, productMain.currency || 'INR')}</del></div>
+                                )}
                                 {/* {productMain.originPrice && (
                                     <div className="product-sale caption2 font-semibold bg-green px-3 py-0.5 inline-block rounded-full">
                                         -{percentSale}%
@@ -237,7 +266,7 @@ const Default = ({ data }) => {
                                 <div className="choose-color">
                                     <div className="text-title">Colors: <span className='text-title color'>{activeColor}</span></div>
                                     <div className="list-color flex items-center gap-2 flex-wrap mt-3">
-                                        {productMain.variation.map((item, index) => (
+                                        {(productMain.variation || []).map((item, index) => (
                                             <div
                                                 className={`color-item w-12 h-12 rounded-xl duration-300 relative ${activeColor === item.color ? 'active' : ''}`}
                                                 key={index}
@@ -419,7 +448,7 @@ const Default = ({ data }) => {
                                     <i className="fas fa-truck text-4xl"></i>
                                     <div>
                                         <div className="text-title">Free shipping</div>
-                                        <div className="caption1 text-secondary mt-1">Free shipping on orders over $75.</div>
+                                        <div className="caption1 text-secondary mt-1">Free shipping on orders over {formatPrice(75)}.</div>
                                     </div>
                                 </div>
                                 <div className="item flex items-center gap-3 mt-4">

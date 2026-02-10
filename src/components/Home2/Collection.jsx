@@ -18,7 +18,7 @@ const Collection = ({ props }) => {
                     spaceBetween={12}
                     slidesPerView={2}
                     navigation
-                    loop={true}
+                    rewind={true}
                     modules={[Navigation, Autoplay]}
                     breakpoints={{
                         576: {

@@ -5,10 +5,12 @@ import Slider from 'rc-slider';
 import 'rc-slider/assets/index.css'
 import HandlePagination from '../Other/HandlePagination';
 import { Link } from 'react-router-dom';
+import useCurrencyStore from '../../store/currencyStore';
 
 
 
 const ShopBreadCrumb1 = ({ data, productPerPage, dataType, gender, category }) => {
+    const { getCurrencySymbol } = useCurrencyStore();
     const [showOnlySale, setShowOnlySale] = useState(false)
     const [sortOption, setSortOption] = useState('');
     const [type, setType] = useState(dataType)
@@ -87,7 +89,8 @@ const ShopBreadCrumb1 = ({ data, productPerPage, dataType, gender, category }) =
 
         let isSizeMatched = true;
         if (size) {
-            isSizeMatched = product.sizes.includes(size)
+            const productSizes = product.sizes || (product.variation || []).map(v => v.size).filter(Boolean);
+            isSizeMatched = productSizes.includes(size)
         }
 
         let isPriceRangeMatched = true;
@@ -97,7 +100,7 @@ const ShopBreadCrumb1 = ({ data, productPerPage, dataType, gender, category }) =
 
         let isColorMatched = true;
         if (color) {
-            isColorMatched = product.variation.some(item => item.color === color)
+            isColorMatched = (product.variation || []).some(item => item.color === color)
         }
 
         let isBrandMatched = true;
@@ -168,10 +171,12 @@ const ShopBreadCrumb1 = ({ data, productPerPage, dataType, gender, category }) =
     // Find page number base on filteredData
     const pageCount = Math.ceil(filteredData.length / productsPerPage);
 
-    // If page number 0, set current page = 0
-    if (pageCount === 0) {
-        setCurrentPage(0);
-    }
+    // If page number 0, reset via effect
+    useEffect(() => {
+        if (pageCount === 0 && currentPage !== 0) {
+            setCurrentPage(0);
+        }
+    }, [pageCount, currentPage]);
 
     // Get product data for current page
     let currentProducts;
@@ -285,13 +290,13 @@ const ShopBreadCrumb1 = ({ data, productPerPage, dataType, gender, category }) =
                                 <div className="price-block flex items-center justify-between flex-wrap mt-4">
                                     <div className="min flex items-center gap-1">
                                         <div>Min price:</div>
-                                        <div className='price-min'>$
+                                        <div className='price-min'>{getCurrencySymbol()}
                                             <span>{priceRange.min}</span>
                                         </div>
                                     </div>
                                     <div className="min flex items-center gap-1">
                                         <div>Max price:</div>
-                                        <div className='price-max'>$
+                                        <div className='price-max'>{getCurrencySymbol()}
                                             <span>{priceRange.max}</span>
                                         </div>
                                     </div>
@@ -474,11 +479,11 @@ const ShopBreadCrumb1 = ({ data, productPerPage, dataType, gender, category }) =
                             </div>
 
                             <div className="list-product hide-product-sold !grid lg:!grid-cols-3 !grid-cols-2 sm:!gap-[120px] !gap-y-[95px]  !mt-7 mb-28">
-                                {currentProducts?.map((item) => (
+                                {currentProducts?.map((item, index) => (
                                     item.id === 'no-data' ? (
-                                        <div key={item.id} className="no-data-product">No products match the selected criteria.</div>
+                                        <div key="no-data" className="no-data-product">No products match the selected criteria.</div>
                                     ) : (
-                                        <Product key={item.id} data={item} type='grid' />
+                                        <Product key={item._id || item.id || index} data={item} type='grid' />
                                     )
                                 ))}
                             </div>

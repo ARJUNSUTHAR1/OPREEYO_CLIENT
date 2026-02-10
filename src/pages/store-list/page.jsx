@@ -45,8 +45,8 @@ const StoreList = () => {
                                     <div className="item flex lg:gap-10 gap-6">
                                         <div className='w-1/2'>
                                             <div className="heading6">Infomation:</div>
-                                            <div className="text-secondary mt-2">+1 666 234 8888<br />
-                                                hi.avitex@gmail.com</div>
+                                            <div className="text-secondary mt-2">+91-XXXXX-XXXXX<br />
+                                                arjunsuthar2112@gmail.com</div>
                                         </div>
                                         <div className='w-1/2'>
                                             <div className="heading6">Our social media:</div>
@@ -90,8 +90,8 @@ const StoreList = () => {
                                     <div className="item flex lg:gap-10 gap-6">
                                         <div className='w-1/2'>
                                             <div className="heading6">Infomation:</div>
-                                            <div className="text-secondary mt-2">+1 666 234 8888<br />
-                                                hi.avitex@gmail.com</div>
+                                            <div className="text-secondary mt-2">+91-XXXXX-XXXXX<br />
+                                                arjunsuthar2112@gmail.com</div>
                                         </div>
                                         <div className='w-1/2'>
                                             <div className="heading6">Our social media:</div>
@@ -149,8 +149,8 @@ const StoreList = () => {
                                     <div className="item flex lg:gap-10 gap-6">
                                         <div className='w-1/2'>
                                             <div className="heading6">Infomation:</div>
-                                            <div className="text-secondary mt-2">+1 666 234 8888<br />
-                                                hi.avitex@gmail.com</div>
+                                            <div className="text-secondary mt-2">+91-XXXXX-XXXXX<br />
+                                                arjunsuthar2112@gmail.com</div>
                                         </div>
                                         <div className='w-1/2'>
                                             <div className="heading6">Our social media:</div>
