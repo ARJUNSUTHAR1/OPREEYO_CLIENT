@@ -29,7 +29,8 @@ const AdminBanners = () => {
     const fetchBanners = async () => {
         try {
             const token = localStorage.getItem('token');
-            const response = await axios.get('http://localhost:5000/api/banners', {
+            const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+            const response = await axios.get(`${BASE_URL}/api/banners`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setBanners(response.data);
@@ -56,12 +57,13 @@ const AdminBanners = () => {
         const toastId = toast.loading('Uploading banner image...');
 
         try {
-            const response = await axios.post('http://localhost:5000/api/upload', formData, {
+            const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+            const response = await axios.post(`${BASE_URL}/api/upload`, formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
 
             if (response.data && response.data.path) {
-                const imageUrl = `http://localhost:5000${response.data.path}`;
+                const imageUrl = `${BASE_URL}${response.data.path}`;
                 setFormData(prev => ({ ...prev, image: imageUrl }));
                 toast.dismiss(toastId);
                 toast.success('Banner image uploaded successfully');
@@ -87,11 +89,12 @@ const AdminBanners = () => {
             const token = localStorage.getItem('token');
             const config = { headers: { Authorization: `Bearer ${token}` } };
 
+            const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
             if (editingBanner) {
-                await axios.put(`http://localhost:5000/api/banners/${editingBanner._id}`, formData, config);
+                await axios.put(`${BASE_URL}/api/banners/${editingBanner._id}`, formData, config);
                 toast.success('Banner updated successfully');
             } else {
-                await axios.post('http://localhost:5000/api/banners', formData, config);
+                await axios.post(`${BASE_URL}/api/banners`, formData, config);
                 toast.success('Banner created successfully');
             }
 
@@ -136,7 +139,8 @@ const AdminBanners = () => {
 
         try {
             const token = localStorage.getItem('token');
-            await axios.delete(`http://localhost:5000/api/banners/${bannerId}`, {
+            const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+            await axios.delete(`${BASE_URL}/api/banners/${bannerId}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             toast.success('Banner deleted successfully');

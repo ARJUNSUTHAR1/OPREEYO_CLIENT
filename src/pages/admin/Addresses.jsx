@@ -15,7 +15,8 @@ const AdminAddresses = () => {
     const fetchAddresses = async () => {
         try {
             const token = localStorage.getItem('token');
-            const response = await axios.get('http://localhost:5000/api/addresses', {
+            const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+            const response = await axios.get(`${BASE_URL}/api/addresses`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setAddresses(response.data);

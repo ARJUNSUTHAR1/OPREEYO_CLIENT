@@ -16,7 +16,8 @@ const AdminProducts = () => {
 
     const fetchProducts = async () => {
         try {
-            const response = await axios.get('http://localhost:5000/api/products');
+            const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+            const response = await axios.get(`${BASE_URL}/api/products`);
             setProducts(response.data);
             setLoading(false);
         } catch (error) {
@@ -33,7 +34,8 @@ const AdminProducts = () => {
 
         try {
             const token = localStorage.getItem('token');
-            await axios.delete(`http://localhost:5000/api/products/${productId}`, {
+            const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+            await axios.delete(`${BASE_URL}/api/products/${productId}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             toast.success('Product deleted successfully');

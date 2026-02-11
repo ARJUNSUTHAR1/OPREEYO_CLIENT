@@ -25,11 +25,12 @@ const AdminDashboard = () => {
                 headers: { Authorization: `Bearer ${token}` }
             };
 
+            const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
             // Fetch products
-            const productsRes = await axios.get('http://localhost:5000/api/products');
+            const productsRes = await axios.get(`${BASE_URL}/api/products`);
             
             // Fetch orders
-            const ordersRes = await axios.get('http://localhost:5000/api/payment/orders', config);
+            const ordersRes = await axios.get(`${BASE_URL}/api/payment/orders`, config);
 
             const orders = ordersRes.data;
             const totalRevenue = orders.reduce((sum, order) => sum + order.total, 0);

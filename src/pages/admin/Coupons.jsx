@@ -29,7 +29,8 @@ const AdminCoupons = () => {
     const fetchCoupons = async () => {
         try {
             const token = localStorage.getItem('token');
-            const response = await axios.get('http://localhost:5000/api/coupons', {
+            const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+            const response = await axios.get(`${BASE_URL}/api/coupons`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setCoupons(response.data);
@@ -54,13 +55,14 @@ const AdminCoupons = () => {
         try {
             const token = localStorage.getItem('token');
             
+            const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
             if (editingCoupon) {
-                await axios.put(`http://localhost:5000/api/coupons/${editingCoupon._id}`, formData, {
+                await axios.put(`${BASE_URL}/api/coupons/${editingCoupon._id}`, formData, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 toast.success('Coupon updated successfully');
             } else {
-                await axios.post('http://localhost:5000/api/coupons', formData, {
+                await axios.post(`${BASE_URL}/api/coupons`, formData, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 toast.success('Coupon created successfully');
@@ -99,7 +101,8 @@ const AdminCoupons = () => {
 
         try {
             const token = localStorage.getItem('token');
-            await axios.delete(`http://localhost:5000/api/coupons/${couponId}`, {
+            const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+            await axios.delete(`${BASE_URL}/api/coupons/${couponId}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             toast.success('Coupon deleted successfully');

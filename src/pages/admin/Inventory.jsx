@@ -22,9 +22,10 @@ const AdminInventory = () => {
             const token = localStorage.getItem('token');
             const config = { headers: { Authorization: `Bearer ${token}` } };
 
+            const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
             const [lowStock, outOfStock] = await Promise.all([
-                axios.get(`http://localhost:5000/api/inventory/low-stock?threshold=${threshold}`, config),
-                axios.get('http://localhost:5000/api/inventory/out-of-stock', config),
+                axios.get(`${BASE_URL}/api/inventory/low-stock?threshold=${threshold}`, config),
+                axios.get(`${BASE_URL}/api/inventory/out-of-stock`, config),
             ]);
 
             setLowStockItems(lowStock.data);
@@ -59,8 +60,9 @@ const AdminInventory = () => {
 
         try {
             const token = localStorage.getItem('token');
+            const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
             const response = await axios.post(
-                'http://localhost:5000/api/inventory/bulk-update',
+                `${BASE_URL}/api/inventory/bulk-update`,
                 { updates },
                 { headers: { Authorization: `Bearer ${token}` } }
             );

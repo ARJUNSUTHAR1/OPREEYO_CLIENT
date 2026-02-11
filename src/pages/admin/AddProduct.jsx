@@ -39,7 +39,8 @@ const AddProduct = () => {
         try {
             setLoading(true);
             const token = localStorage.getItem('token');
-            const response = await axios.get(`http://localhost:5000/api/products/${id}`, {
+            const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+            const response = await axios.get(`${BASE_URL}/api/products/${id}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             
@@ -91,12 +92,13 @@ const AddProduct = () => {
         const toastId = toast.loading('Uploading image...');
 
         try {
-            const response = await axios.post('http://localhost:5000/api/upload', formData, {
+            const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+            const response = await axios.post(`${BASE_URL}/api/upload`, formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
 
             if (response.data && response.data.path) {
-                const imageUrl = `http://localhost:5000${response.data.path}`;
+                const imageUrl = `${BASE_URL}${response.data.path}`;
 
                 if (type === 'thumb') {
                     setThumbImage(imageUrl);
@@ -133,7 +135,8 @@ const AddProduct = () => {
             const filename = imageUrl.split('/').pop();
             
             // Delete from server
-            await axios.delete(`http://localhost:5000/api/upload/${filename}`);
+            const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+            await axios.delete(`${BASE_URL}/api/upload/${filename}`);
             
             // Update state based on type
             if (type === 'thumb') {
@@ -191,13 +194,14 @@ const AddProduct = () => {
                 }))
             };
 
+            const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
             if (isEditMode) {
-                await axios.put(`http://localhost:5000/api/products/${id}`, productData, {
+                await axios.put(`${BASE_URL}/api/products/${id}`, productData, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 toast.success('Product updated successfully');
             } else {
-                await axios.post('http://localhost:5000/api/products', productData, {
+                await axios.post(`${BASE_URL}/api/products`, productData, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 toast.success('Product added successfully');
